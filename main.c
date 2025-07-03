@@ -16,8 +16,10 @@ static int is_dir(const char *path) {
 
 static int is_repo_type(const char *path, const char *dirname) {
   char buf[PATH_MAX];
-  if (snprintf(buf, sizeof buf, "%s/%s", path, dirname) >= (int)sizeof buf)
+  if (snprintf(buf, sizeof buf, "%s/%s", path, dirname) >= (int)sizeof buf) {
+    fprintf(stderr, "Warning: path too long, skipping %s/%s\n", path, dirname);
     return 0;
+  }
   return is_dir(buf);
 }
 
@@ -42,8 +44,11 @@ static void find_repos(const char *path, size_t base_len) {
 
     char child[PATH_MAX];
     if (snprintf(child, sizeof child, "%s/%s", path, ent->d_name) >=
-        (int)sizeof child)
+        (int)sizeof child) {
+      fprintf(stderr, "Warning: path too long, skipping %s/%s\n", path,
+              ent->d_name);
       continue;
+    }
 
     if (!is_dir(child)) continue;
 
@@ -55,7 +60,10 @@ static void find_repos(const char *path, size_t base_len) {
     }
   }
 
-  closedir(dir);
+  if (closedir(dir) != 0) {
+    fprintf(stderr, "Warning: failed to close directory %s: %s\n", path,
+            strerror(errno));
+  }
 }
 
 int main(void) {
