@@ -14,17 +14,16 @@ static int is_dir(const char *path) {
   return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
 }
 
-static int is_git_repo(const char *path) {
+static int is_repo_type(const char *path, const char *dirname) {
   char buf[PATH_MAX];
-  if (snprintf(buf, sizeof buf, "%s/.git", path) >= (int)sizeof buf) return 0;
+  if (snprintf(buf, sizeof buf, "%s/%s", path, dirname) >= (int)sizeof buf)
+    return 0;
   return is_dir(buf);
 }
 
-static int is_jj_repo(const char *path) {
-  char buf[PATH_MAX];
-  if (snprintf(buf, sizeof buf, "%s/.jj", path) >= (int)sizeof buf) return 0;
-  return is_dir(buf);
-}
+static int is_git_repo(const char *path) { return is_repo_type(path, ".git"); }
+
+static int is_jj_repo(const char *path) { return is_repo_type(path, ".jj"); }
 
 static int is_repo(const char *path) {
   return is_git_repo(path) || is_jj_repo(path);
