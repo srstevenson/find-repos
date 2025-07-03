@@ -11,3 +11,7 @@ $(EXE): $(SRC)
 .PHONY: clean
 clean:
 	$(RM) $(EXE)
+
+.PHONY: format
+format:
+	clang-format -i $(SRC)
