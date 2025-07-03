@@ -15,3 +15,7 @@ clean:
 .PHONY: format
 format:
 	clang-format -i $(SRC)
+
+.PHONY: install
+install: $(EXE)
+	install -m 755 $(EXE) $(PREFIX)/bin/
