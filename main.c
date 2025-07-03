@@ -14,6 +14,11 @@ static int is_dir(const char *path) {
   return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
 }
 
+static int is_dot_dir(const char *name) {
+  return name[0] == '.' &&
+         (name[1] == '\0' || (name[1] == '.' && name[2] == '\0'));
+}
+
 static int is_repo_type(const char *path, const char *dirname) {
   char buf[PATH_MAX];
   if (snprintf(buf, sizeof buf, "%s/%s", path, dirname) >= (int)sizeof buf) {
@@ -31,21 +36,17 @@ static int is_repo(const char *path) {
   return is_git_repo(path) || is_jj_repo(path);
 }
 
-static void find_repos(const char *path, size_t base_len) {
-  DIR *dir = opendir(path);
+static void find_repos(const char *dir_path, size_t base_len) {
+  DIR *dir = opendir(dir_path);
   if (!dir) return;
 
   for (struct dirent *ent; (ent = readdir(dir)) != NULL;) {
-    // Skip "." and ".."
-    if (ent->d_name[0] == '.' &&
-        (ent->d_name[1] == '\0' ||
-         (ent->d_name[1] == '.' && ent->d_name[2] == '\0')))
-      continue;
+    if (is_dot_dir(ent->d_name)) continue;
 
     char child[PATH_MAX];
-    if (snprintf(child, sizeof child, "%s/%s", path, ent->d_name) >=
+    if (snprintf(child, sizeof child, "%s/%s", dir_path, ent->d_name) >=
         (int)sizeof child) {
-      fprintf(stderr, "Warning: path too long, skipping %s/%s\n", path,
+      fprintf(stderr, "Warning: path too long, skipping %s/%s\n", dir_path,
               ent->d_name);
       continue;
     }
@@ -61,7 +62,7 @@ static void find_repos(const char *path, size_t base_len) {
   }
 
   if (closedir(dir) != 0) {
-    fprintf(stderr, "Warning: failed to close directory %s: %s\n", path,
+    fprintf(stderr, "Warning: failed to close directory %s: %s\n", dir_path,
             strerror(errno));
   }
 }
