@@ -14,15 +14,27 @@ static int is_dir(const char *path) {
   return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
 }
 
+/* Helper function to build paths safely */
+static int build_path(char *buf, size_t buf_size, const char *dir,
+                      const char *name) {
+  int result = snprintf(buf, buf_size, "%s/%s", dir, name);
+  if (result >= (int)buf_size) {
+    fprintf(stderr, "Warning: path too long, skipping %s/%s\n", dir, name);
+    return 0;
+  }
+  return 1;
+}
+
+/* Check if directory name is "." or ".." */
 static int is_dot_dir(const char *name) {
   return name[0] == '.' &&
          (name[1] == '\0' || (name[1] == '.' && name[2] == '\0'));
 }
 
+/* Check if directory contains a repository of the given type */
 static int is_repo_type(const char *path, const char *dirname) {
   char buf[PATH_MAX];
-  if (snprintf(buf, sizeof buf, "%s/%s", path, dirname) >= (int)sizeof buf) {
-    fprintf(stderr, "Warning: path too long, skipping %s/%s\n", path, dirname);
+  if (!build_path(buf, sizeof buf, path, dirname)) {
     return 0;
   }
   return is_dir(buf);
@@ -36,6 +48,7 @@ static int is_repo(const char *path) {
   return is_git_repo(path) || is_jj_repo(path);
 }
 
+/* Recursively find repositories in directory tree */
 static void find_repos(const char *dir_path, size_t base_len) {
   DIR *dir = opendir(dir_path);
   if (!dir) return;
@@ -44,19 +57,17 @@ static void find_repos(const char *dir_path, size_t base_len) {
     if (is_dot_dir(ent->d_name)) continue;
 
     char child[PATH_MAX];
-    if (snprintf(child, sizeof child, "%s/%s", dir_path, ent->d_name) >=
-        (int)sizeof child) {
-      fprintf(stderr, "Warning: path too long, skipping %s/%s\n", dir_path,
-              ent->d_name);
+    if (!build_path(child, sizeof child, dir_path, ent->d_name)) {
       continue;
     }
 
     if (!is_dir(child)) continue;
 
     if (is_repo(child)) {
-      // base_len is length of "~/dev" and +1 skips leading '/'
+      /* Print relative path (skip base directory and leading slash) */
       puts(child + base_len + 1);
     } else {
+      /* Recursively search subdirectories */
       find_repos(child, base_len);
     }
   }
