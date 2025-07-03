@@ -20,6 +20,16 @@ static int is_git_repo(const char *path) {
   return is_dir(buf);
 }
 
+static int is_jj_repo(const char *path) {
+  char buf[PATH_MAX];
+  if (snprintf(buf, sizeof buf, "%s/.jj", path) >= (int)sizeof buf) return 0;
+  return is_dir(buf);
+}
+
+static int is_repo(const char *path) {
+  return is_git_repo(path) || is_jj_repo(path);
+}
+
 static void find_repos(const char *path, size_t base_len) {
   DIR *dir = opendir(path);
   if (!dir) return;
@@ -38,7 +48,7 @@ static void find_repos(const char *path, size_t base_len) {
 
     if (!is_dir(child)) continue;
 
-    if (is_git_repo(child)) {
+    if (is_repo(child)) {
       // base_len is length of "~/dev" and +1 skips leading '/'
       puts(child + base_len + 1);
     } else {
