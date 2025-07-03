@@ -1,6 +1,6 @@
 EXE = find-repos
 SRC = main.c
-CFLAGS = -Wall -Werror -pedantic
+CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic -O2
 
 .PHONY: all
 all: $(EXE)
