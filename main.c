@@ -78,17 +78,44 @@ static void find_repos(const char *dir_path, size_t base_len) {
   }
 }
 
-int main(void) {
-  const char *home = getenv("HOME");
-  if (!home) {
-    fputs("$HOME is not set\n", stderr);
+static void usage(const char *program_name) {
+  fprintf(stderr, "Usage: %s [directory]\n", program_name);
+  fprintf(stderr, "Find Git and Jujutsu repos in the specified directory.\n");
+  fprintf(stderr, "If no directory is specified, search in ~/dev\n");
+}
+
+int main(int argc, char *argv[]) {
+  if (argc > 2) {
+    usage(argv[0]);
     return EXIT_FAILURE;
   }
 
+  if (argc == 2 &&
+      (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)) {
+    usage(argv[0]);
+    return EXIT_SUCCESS;
+  }
+
   char start[PATH_MAX];
-  if (snprintf(start, sizeof start, "%s/dev", home) >= (int)sizeof start) {
-    fputs("start path is too long\n", stderr);
-    return EXIT_FAILURE;
+
+  if (argc == 2) {
+    /* Use provided directory */
+    if (snprintf(start, sizeof start, "%s", argv[1]) >= (int)sizeof start) {
+      fputs("provided path is too long\n", stderr);
+      return EXIT_FAILURE;
+    }
+  } else {
+    /* Use default ~/dev directory */
+    const char *home = getenv("HOME");
+    if (!home) {
+      fputs("$HOME is not set\n", stderr);
+      return EXIT_FAILURE;
+    }
+
+    if (snprintf(start, sizeof start, "%s/dev", home) >= (int)sizeof start) {
+      fputs("start path is too long\n", stderr);
+      return EXIT_FAILURE;
+    }
   }
 
   char canonical[PATH_MAX];
