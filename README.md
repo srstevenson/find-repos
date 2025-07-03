@@ -6,16 +6,10 @@ between repositories.
 
 ## Installation
 
-A C compiler is required. Build using the provided Makefile:
+A C compiler is required. Build and install using the provided Makefile:
 
 ```sh
-make
-```
-
-Copy the binary to a directory on your `PATH`, such as:
-
-```sh
-cp find-repos ~/.local/bin/
+make PREFIX=~/.local install
 ```
 
 ## Usage
